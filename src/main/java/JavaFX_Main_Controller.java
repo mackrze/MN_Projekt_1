@@ -4,20 +4,14 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.chart.CategoryAxis;
-import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.XYChart;
+import javafx.scene.chart.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
 
 public class JavaFX_Main_Controller {
 
@@ -28,9 +22,9 @@ public class JavaFX_Main_Controller {
     private URL location;
 
     @FXML
-    private LineChart<Number, Number> lineChart;
+    private ScatterChart<Number, Number> lineChart;
     @FXML
-    private CategoryAxis categoryAxis;
+    private NumberAxis categoryAxis;
 
     @FXML
     private NumberAxis numberAxis;
@@ -39,8 +33,6 @@ public class JavaFX_Main_Controller {
     private TextField distance;
     @FXML
     private TextField eccentricity;
-    @FXML
-    private TextArea textArea;
     @FXML
     private TextField ea;
     @FXML
@@ -54,34 +46,30 @@ public class JavaFX_Main_Controller {
         textField_NameOfSaveFile.appendText("Start");
         Double distance_value = Double.valueOf(distance.getText());
         Double eccentricity_value = Double.valueOf(eccentricity.getText());
-
-
         String selectedChoice = choiceBox_MethodList.getSelectionModel().getSelectedItem();
         Double ea_value = Double.valueOf(ea.getText());
-        ArrayList<double[]> solve;
+        double E0 = 0;
 
         switch (selectedChoice) {
             case "Bisection":
-                bisectionSolverMethod(distance_value, ea_value, eccentricity_value);
-                //BisectionSolver bisectionSolver = new BisectionSolver(function);
-                //solve = bisectionSolver.solver(0, 3, ea_value, eccentricity_value);
+                E0 = bisectionSolverMethod(ea_value, eccentricity_value);
                 break;
             case "Falsi":
-                //FalsiSolver falsiSolver =new FalsiSolver(function);
-                //solve=falsiSolver.solver(0,3, ea_value, eccentricity_value);
+                E0 = falsiSolverMethod(ea_value, eccentricity_value);
+                break;
+            case "Fixed point iteration":
+                E0 = fixedPointIterationSolverMethod(ea_value, eccentricity_value);
+                break;
+            case "Newton-Raphson":
+                E0=newtonRaphsonSolverMethod(ea_value,eccentricity_value);
+                break;
+            case "Transversal":
+                E0=transversalSolverMethod(ea_value,eccentricity_value);
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + selectedChoice);
         }
-        // textField_NameOfSaveFile.appendText(String.valueOf(solve.get(solve.size() - 1)[2]));
-        //double x = Double.parseDouble(distance.getText()) * Math.cos(solve.get(solve.size() - 1)[2] - eccentricity_value);
-        //double y = Double.parseDouble(distance.getText()) * Math.sqrt(1 - (eccentricity_value * eccentricity_value)) * Math.sin(solve.get(solve.size() - 1)[2]);
-        // textField_NameOfSaveFile.appendText(String.valueOf(x));
-        // textField_NameOfSaveFile.appendText(String.valueOf(y));
-        // textArea.appendText("Distance A.U="+distance.getText()+" eccentricity="+eccentricity_value+" Method= "+selectedChoice+"\n E="+solve.get(solve.size() - 1)[2]+ "\n x="+x+"\n y="+y);
-        // Plot plot=new Plot(Double.parseDouble(distance.getText()),x,y,eccentricity_value);
-        // XYChart.Series series = plot.getValues();
-        // lineChart.getData().addAll(series);
+        createPlot(E0, eccentricity_value);
 
 
     }
@@ -98,12 +86,11 @@ public class JavaFX_Main_Controller {
         double y;
         String fileName = "src/test/resources/" + textField_NameOfSaveFile.getText() + ".txt";
         try (FileWriter fileWriter = new FileWriter(fileName)) {
-            for (int i = 1; i < 365; i++)
-                fileWriter.write(numberAxis.getValueForDisplay(i) + "\t " + categoryAxis.getValueForDisplay(i)+"\n");
+            for (int i = 1; i <= 360; i++)
+                fileWriter.write(numberAxis.getValueForDisplay(i) + "\t " + categoryAxis.getValueForDisplay(i) + "\n");
         } catch (IOException e) {
             e.printStackTrace();
         }
-        //System.out.println(numberAxis.getValueForDisplay(i));
 
     }
 
@@ -122,12 +109,30 @@ public class JavaFX_Main_Controller {
 
     }
 
-    public void bisectionSolverMethod(double distance_value, double ea_value, double eccentricity_value) {
-        XYChart.Series series = new XYChart.Series();
-        BisectionSolver bisectionSolver;
-        ArrayList<double[]> solve;
+    public void createPlot(double E0, double eccentricity_value) {
+        double M;
         double x;
         double y;
+        XYChart.Series series = new XYChart.Series();
+        Function function = new Function() {
+            @Override
+            public double function(double e, double E, double M) {
+                return M + e * Math.sin(E) - E;
+            }
+        };
+        double En;
+        for (int i = 1; i <= 360; i++) {
+            M = Math.PI * 2 / 360 * (double) i;
+            En = function.function(eccentricity_value, E0, M);
+            x = Double.parseDouble(distance.getText()) * Math.cos(En - eccentricity_value);
+            y = Double.parseDouble(distance.getText()) * Math.sqrt(1 - (eccentricity_value * eccentricity_value)) * Math.sin(En);
+            series.getData().add(new XYChart.Data(x, y));
+        }
+        lineChart.getData().addAll(series);
+    }
+
+    public double bisectionSolverMethod(double ea_value, double eccentricity_value) {
+        ArrayList<double[]> solve;
         double M = 1;
         Function function = new Function() {
             @Override
@@ -135,23 +140,68 @@ public class JavaFX_Main_Controller {
                 return M + e * Math.sin(E) - E;
             }
         };
-        bisectionSolver = new BisectionSolver(function);
+        BisectionSolver bisectionSolver = new BisectionSolver(function);
         solve = bisectionSolver.solver(-0.5, 8, ea_value, eccentricity_value, M);
         double E0 = solve.get(solve.size() - 1)[2];
-        double En;
-        for (int i = 1; i <= 365; i++) {
-            M = Math.PI * 2 / 365 * (double) i;
-            En = function.function(eccentricity_value, E0, M);
-            x = Double.parseDouble(distance.getText()) * Math.cos(En - eccentricity_value);
-            y = Double.parseDouble(distance.getText()) * Math.sqrt(1 - (eccentricity_value * eccentricity_value)) * Math.sin(En);
-            series.getData().add(new XYChart.Data(String.valueOf(x), y));
-        }
-        //x = Double.parseDouble(distance.getText()) * Math.cos(solve.get(solve.size() - 1)[2] - eccentricity_value);
-        // y = Double.parseDouble(distance.getText()) * Math.sqrt(1 - (eccentricity_value * eccentricity_value)) * Math.sin(solve.get(solve.size() - 1)[2]);
+        return E0;
+    }
+    public double newtonRaphsonSolverMethod(double ea_value, double eccentricity_value) {
+        ArrayList<double[]> solve;
+        double M = 1;
+        Function function = new Function() {
+            @Override
+            public double function(double e, double E, double M) {
+                return M + e * Math.sin(E) - E;
+            }
+        };
+        NewtonRaphsonSolver newtonRaphsonSolver=new NewtonRaphsonSolver(function);
+        solve = newtonRaphsonSolver.solver(-0.5, 8, ea_value, eccentricity_value, M,3);
+        double E0 = solve.get(solve.size() - 1)[2];
+        return E0;
+    }
 
+    public double fixedPointIterationSolverMethod(double ea_value, double eccentricity_value) {
+        ArrayList<double[]> solve;
+        double M = 1;
+        Function function = new Function() {
+            @Override
+            public double function(double e, double E, double M) {
+                return M + e * Math.sin(E) - E;
+            }
+        };
+        FixedPointIterationSolver fixedPointIterationSolver = new FixedPointIterationSolver(function);
+        solve = fixedPointIterationSolver.solver(-0.5, 8, ea_value, eccentricity_value, M, 3);
+        double E0 = solve.get(solve.size() - 1)[2];
+        return E0;
+    }
 
-        lineChart.getData().addAll(series);
-
+    public double falsiSolverMethod(double ea_value, double eccentricity_value) {
+        ArrayList<double[]> solve;
+        double M = 1;
+        Function function = new Function() {
+            @Override
+            public double function(double e, double E, double M) {
+                return M + e * Math.sin(E) - E;
+            }
+        };
+        FalsiSolver falsiSolver = new FalsiSolver(function);
+        solve = falsiSolver.solver(-0.5, 8, ea_value, eccentricity_value, M);
+        double E0 = solve.get(solve.size() - 1)[2];
+        return E0;
+    }
+    public double transversalSolverMethod(double ea_value, double eccentricity_value) {
+        ArrayList<double[]> solve;
+        double M = 1;
+        Function function = new Function() {
+            @Override
+            public double function(double e, double E, double M) {
+                return M + e * Math.sin(E) - E;
+            }
+        };
+        TransversalSolver transversalSolver = new TransversalSolver(function);
+        solve = transversalSolver.solver(-0.5, 8, ea_value,eccentricity_value,M,3,4);
+        double E0 = solve.get(solve.size() - 1)[2];
+        return E0;
     }
 
 

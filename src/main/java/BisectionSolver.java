@@ -89,13 +89,5 @@ public class BisectionSolver {
         return Math.abs((presentApproximation-previousApproximation)/presentApproximation*100);
     }
 
-    /**
-     * calculate true value error
-     * @param presentApproximation
-     * @param trueValue
-     * @return true value error
-     */
-    private double calculateTrueValueError(double presentApproximation,double trueValue){
-        return Math.abs((trueValue-presentApproximation)/trueValue*100);
-    }
+
 }

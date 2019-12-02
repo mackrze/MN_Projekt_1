@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.Cursor?>
-<?import javafx.scene.chart.CategoryAxis?>
-<?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.ScatterChart?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ChoiceBox?>
-<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
@@ -39,14 +37,13 @@
             </VBox>
          </children>
       </HBox>
-      <LineChart fx:id="lineChart" alternativeRowFillVisible="false" createSymbols="false" horizontalGridLinesVisible="false" horizontalZeroLineVisible="false" legendSide="TOP" legendVisible="false" title="Trajectory" verticalGridLinesVisible="false" verticalZeroLineVisible="false">
+      <ScatterChart fx:id="lineChart" alternativeRowFillVisible="false" horizontalGridLinesVisible="false" horizontalZeroLineVisible="false" legendSide="TOP" legendVisible="false" title="Trajectory" verticalGridLinesVisible="false" verticalZeroLineVisible="false">
         <xAxis>
-          <CategoryAxis fx:id="categoryAxis" gapStartAndEnd="false" label="x" prefHeight="23.0" prefWidth="543.0" side="BOTTOM" tickLabelRotation="90.0" tickLabelsVisible="false" tickMarkVisible="false" />
+          <NumberAxis fx:id="categoryAxis" label="x" prefHeight="23.0" prefWidth="543.0" side="BOTTOM" tickLabelRotation="90.0" tickMarkVisible="false" />
         </xAxis>
         <yAxis>
           <NumberAxis fx:id="numberAxis" cacheShape="false" centerShape="false" forceZeroInRange="false" label="y" minorTickVisible="false" scaleShape="false" side="LEFT" tickMarkVisible="false" visible="false" />
         </yAxis>
-      </LineChart>
-      <TextArea fx:id="textArea" prefHeight="200.0" prefWidth="200.0" />
+      </ScatterChart>
    </children>
 </VBox>
