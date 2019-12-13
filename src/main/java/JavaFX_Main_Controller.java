@@ -48,23 +48,24 @@ public class JavaFX_Main_Controller {
         Double eccentricity_value = Double.valueOf(eccentricity.getText());
         String selectedChoice = choiceBox_MethodList.getSelectionModel().getSelectedItem();
         Double ea_value = Double.valueOf(ea.getText());
-        double E0 = 0;
+        double [] E0;
+        Function function = (e, E, M) -> M + e * Math.sin(E) - E;
 
         switch (selectedChoice) {
             case "Bisection":
-                E0 = bisectionSolverMethod(ea_value, eccentricity_value);
+                E0 = bisectionSolverMethod(ea_value, eccentricity_value,function);
                 break;
             case "Falsi":
-                E0 = falsiSolverMethod(ea_value, eccentricity_value);
+                E0 = falsiSolverMethod(ea_value, eccentricity_value,function);
                 break;
             case "Fixed point iteration":
-                E0 = fixedPointIterationSolverMethod(ea_value, eccentricity_value);
+                E0 = fixedPointIterationSolverMethod(ea_value, eccentricity_value,function);
                 break;
             case "Newton-Raphson":
-                E0=newtonRaphsonSolverMethod(ea_value,eccentricity_value);
+                E0=newtonRaphsonSolverMethod(ea_value,eccentricity_value,function);
                 break;
             case "Transversal":
-                E0=transversalSolverMethod(ea_value,eccentricity_value);
+                E0=transversalSolverMethod(ea_value,eccentricity_value,function);
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + selectedChoice);
@@ -109,21 +110,34 @@ public class JavaFX_Main_Controller {
 
     }
 
-    public void createPlot(double E0, double eccentricity_value) {
-        double M;
+//    public void createPlot(double E0, double eccentricity_value) {
+//        double M;
+//        double x;
+//        double y;
+//        XYChart.Series series = new XYChart.Series();
+//        Function function = new Function() {
+//            @Override
+//            public double function(double e, double E, double M) {
+//                return M + e * Math.sin(E) - E;
+//            }
+//        };
+//        double En;
+//        for (int i = 1; i <= 360; i++) {
+//            M = Math.PI * 2 / 360 * (double) i;
+//            En = function.function(eccentricity_value, E0, M);
+//            x = Double.parseDouble(distance.getText()) * Math.cos(En - eccentricity_value);
+//            y = Double.parseDouble(distance.getText()) * Math.sqrt(1 - (eccentricity_value * eccentricity_value)) * Math.sin(En);
+//            series.getData().add(new XYChart.Data(x, y));
+//        }
+//        lineChart.getData().addAll(series);
+//    }
+public void createPlot(double [] E0, double eccentricity_value) {
+        double En;
         double x;
         double y;
         XYChart.Series series = new XYChart.Series();
-        Function function = new Function() {
-            @Override
-            public double function(double e, double E, double M) {
-                return M + e * Math.sin(E) - E;
-            }
-        };
-        double En;
         for (int i = 1; i <= 360; i++) {
-            M = Math.PI * 2 / 360 * (double) i;
-            En = function.function(eccentricity_value, E0, M);
+            En=E0[i-1];
             x = Double.parseDouble(distance.getText()) * Math.cos(En - eccentricity_value);
             y = Double.parseDouble(distance.getText()) * Math.sqrt(1 - (eccentricity_value * eccentricity_value)) * Math.sin(En);
             series.getData().add(new XYChart.Data(x, y));
@@ -131,78 +145,142 @@ public class JavaFX_Main_Controller {
         lineChart.getData().addAll(series);
     }
 
-    public double bisectionSolverMethod(double ea_value, double eccentricity_value) {
-        ArrayList<double[]> solve;
-        double M = 1;
-        Function function = new Function() {
-            @Override
-            public double function(double e, double E, double M) {
-                return M + e * Math.sin(E) - E;
-            }
-        };
-        BisectionSolver bisectionSolver = new BisectionSolver(function);
-        solve = bisectionSolver.solver(-0.5, 8, ea_value, eccentricity_value, M);
-        double E0 = solve.get(solve.size() - 1)[2];
-        return E0;
+//    public double bisectionSolverMethod(double ea_value, double eccentricity_value) {
+//        ArrayList<double[]> solve;
+//        double M = 1;
+//        Function function = new Function() {
+//            @Override
+//            public double function(double e, double E, double M) {
+//                return M + e * Math.sin(E) - E;
+//            }
+//        };
+//        BisectionSolver bisectionSolver = new BisectionSolver(function);
+//        solve = bisectionSolver.solver(-0.5, 8, ea_value, eccentricity_value, M);
+//        double E0 = solve.get(solve.size() - 1)[2];
+//        return E0;
+//    }
+public double [] bisectionSolverMethod(double ea_value, double eccentricity_value, Function function) {
+    ArrayList<double[]> solve;
+    double [] listOfE=new double[360];
+    double M=0;
+    BisectionSolver bisectionSolver =new BisectionSolver(function);
+    for (int i = 1; i <= 360; i++) {
+        M = Math.PI * 2 / 360 * (double) i;
+       solve=bisectionSolver.solver(-0.5,8,ea_value,eccentricity_value,M);
+        listOfE[i-1]=solve.get(solve.size()-1)[2];
     }
-    public double newtonRaphsonSolverMethod(double ea_value, double eccentricity_value) {
+    return  listOfE;
+
+}
+    public double [] newtonRaphsonSolverMethod(double ea_value, double eccentricity_value, Function function) {
         ArrayList<double[]> solve;
-        double M = 1;
-        Function function = new Function() {
-            @Override
-            public double function(double e, double E, double M) {
-                return M + e * Math.sin(E) - E;
-            }
-        };
+        double [] listOfE=new double[360];
+        double M=0;
         NewtonRaphsonSolver newtonRaphsonSolver=new NewtonRaphsonSolver(function);
-        solve = newtonRaphsonSolver.solver(-0.5, 8, ea_value, eccentricity_value, M,3);
-        double E0 = solve.get(solve.size() - 1)[2];
-        return E0;
-    }
+        for (int i = 1; i <= 360; i++) {
+            M = Math.PI * 2 / 360 * (double) i;
+            solve=newtonRaphsonSolver.solver(-0.5,8,ea_value,eccentricity_value,M,7.5);
+            listOfE[i-1]=solve.get(solve.size()-1)[2];
+        }
+        return  listOfE;
 
-    public double fixedPointIterationSolverMethod(double ea_value, double eccentricity_value) {
+    }
+//    public double newtonRaphsonSolverMethod(double ea_value, double eccentricity_value) {
+//        ArrayList<double[]> solve;
+//        double M = 1;
+//        Function function = new Function() {
+//            @Override
+//            public double function(double e, double E, double M) {
+//                return M + e * Math.sin(E) - E;
+//            }
+//        };
+//        NewtonRaphsonSolver newtonRaphsonSolver=new NewtonRaphsonSolver(function);
+//        solve = newtonRaphsonSolver.solver(-0.5, 8, ea_value, eccentricity_value, M,3);
+//        double E0 = solve.get(solve.size() - 1)[2];
+//        return E0;
+//    }
+
+    public double [] fixedPointIterationSolverMethod(double ea_value, double eccentricity_value, Function function) {
         ArrayList<double[]> solve;
-        double M = 1;
-        Function function = new Function() {
-            @Override
-            public double function(double e, double E, double M) {
-                return M + e * Math.sin(E) - E;
-            }
-        };
+        double [] listOfE=new double[360];
+        double M=0;
         FixedPointIterationSolver fixedPointIterationSolver = new FixedPointIterationSolver(function);
-        solve = fixedPointIterationSolver.solver(-0.5, 8, ea_value, eccentricity_value, M, 3);
-        double E0 = solve.get(solve.size() - 1)[2];
-        return E0;
-    }
+        for (int i = 1; i <= 360; i++) {
+            M = Math.PI * 2 / 360 * (double) i;
+            solve=fixedPointIterationSolver.solver(-0.5,8,ea_value,eccentricity_value,M,0);
+            listOfE[i-1]=solve.get(solve.size()-1)[2];
+        }
+        return  listOfE;
 
-    public double falsiSolverMethod(double ea_value, double eccentricity_value) {
+    }
+//    public double fixedPointIterationSolverMethod(double ea_value, double eccentricity_value) {
+//        ArrayList<double[]> solve;
+//        double M = 1;
+//        Function function = new Function() {
+//            @Override
+//            public double function(double e, double E, double M) {
+//                return M + e * Math.sin(E) - E;
+//            }
+//        };
+//        FixedPointIterationSolver fixedPointIterationSolver = new FixedPointIterationSolver(function);
+//        solve = fixedPointIterationSolver.solver(-0.5, 8, ea_value, eccentricity_value, M, 3);
+//        double E0 = solve.get(solve.size() - 1)[2];
+//        return E0;
+//    }
+    public double [] falsiSolverMethod(double ea_value, double eccentricity_value, Function function) {
         ArrayList<double[]> solve;
-        double M = 1;
-        Function function = new Function() {
-            @Override
-            public double function(double e, double E, double M) {
-                return M + e * Math.sin(E) - E;
-            }
-        };
+        double [] listOfE=new double[360];
+        double M=0;
         FalsiSolver falsiSolver = new FalsiSolver(function);
-        solve = falsiSolver.solver(-0.5, 8, ea_value, eccentricity_value, M);
-        double E0 = solve.get(solve.size() - 1)[2];
-        return E0;
+        for (int i = 1; i <= 360; i++) {
+            M = Math.PI * 2 / 360 * (double) i;
+            solve=falsiSolver.solver(-0.5,8,ea_value,eccentricity_value,M);
+            listOfE[i-1]=solve.get(solve.size()-1)[2];
+        }
+        return  listOfE;
+
     }
-    public double transversalSolverMethod(double ea_value, double eccentricity_value) {
-        ArrayList<double[]> solve;
-        double M = 1;
-        Function function = new Function() {
-            @Override
-            public double function(double e, double E, double M) {
-                return M + e * Math.sin(E) - E;
-            }
-        };
-        TransversalSolver transversalSolver = new TransversalSolver(function);
-        solve = transversalSolver.solver(-0.5, 8, ea_value,eccentricity_value,M,3,4);
-        double E0 = solve.get(solve.size() - 1)[2];
-        return E0;
+//    public double falsiSolverMethod(double ea_value, double eccentricity_value) {
+//        ArrayList<double[]> solve;
+//        double M = 1;
+//        Function function = new Function() {
+//            @Override
+//            public double function(double e, double E, double M) {
+//                return M + e * Math.sin(E) - E;
+//            }
+//        };
+//        FalsiSolver falsiSolver = new FalsiSolver(function);
+//        solve = falsiSolver.solver(-0.5, 8, ea_value, eccentricity_value, M);
+//        double E0 = solve.get(solve.size() - 1)[2];
+//        return E0;
+//    }
+public double [] transversalSolverMethod(double ea_value, double eccentricity_value, Function function) {
+    ArrayList<double[]> solve;
+    double [] listOfE=new double[360];
+    double M=0;
+    TransversalSolver transversalSolver = new TransversalSolver(function);
+    for (int i = 1; i <= 360; i++) {
+        M = Math.PI * 2 / 360 * (double) i;
+        solve=transversalSolver.solver(-0.5,8,ea_value,eccentricity_value,M,0,0.5);
+        listOfE[i-1]=solve.get(solve.size()-1)[2];
     }
+    return  listOfE;
+
+}
+//    public double transversalSolverMethod(double ea_value, double eccentricity_value) {
+//        ArrayList<double[]> solve;
+//        double M = 1;
+//        Function function = new Function() {
+//            @Override
+//            public double function(double e, double E, double M) {
+//                return M + e * Math.sin(E) - E;
+//            }
+//        };
+//        TransversalSolver transversalSolver = new TransversalSolver(function);
+//        solve = transversalSolver.solver(-0.5, 8, ea_value,eccentricity_value,M,3,4);
+//        double E0 = solve.get(solve.size() - 1)[2];
+//        return E0;
+//    }
 
 
 }
